@@ -24,19 +24,17 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-            // Allow Tailwind and Razorpay scripts
+            // 'unsafe-inline' is needed for the onclick handlers in your HTML
             "script-src": ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://checkout.razorpay.com", "https://cdn.jsdelivr.net"],
-            // Allow Google Fonts
-            "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            "script-src-attr": ["'unsafe-inline'"], 
             "frame-src": ["'self'", "https://api.razorpay.com"],
-            "font-src": ["'self'", "https://fonts.gstatic.com"],
-            // Allow external images (like from OpenRouter or Cloudflare R2)
             "img-src": ["'self'", "data:", "blob:", "https:"],
-            // Allow API connections
-            "connect-src": ["'self'", "https:"]
+            "connect-src": ["'self'", "https:", "http://localhost:3000"],
+            "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            "font-src": ["'self'", "https://fonts.gstatic.com"],
         },
     },
-    // Required to allow images from other domains to load on your canvas
+    crossOriginResourcePolicy: { policy: "cross-origin" },
     crossOriginEmbedderPolicy: false,
 }));
 app.use(cors({

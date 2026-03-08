@@ -32,6 +32,9 @@ router.post('/generate', authMiddleware, async (req, res) => {
         console.log('☁️ Optimizing and uploading to Cloudflare R2...');
         const uploadedUrl = await imageStorage.uploadBase64(transparentBase64, 'designs');
 
+        // Store design: both URLs point to transparent version since we always remove bg
+        // original_image_url = transparent design (for reference)
+        // processed_image_url = transparent design (used for fulfillment/raw_design_url)
         const design = await db.createDesign(
             req.userId,
             prompt,
@@ -93,39 +96,31 @@ router.put('/:designId/position', authMiddleware, async (req, res) => {
     }
 });
 
+// backend/routes/designs.js
+
 router.post('/:designId/finalize', authMiddleware, async (req, res) => {
     try {
         const { designId } = req.params;
-        const { finalImage } = req.body; // This is the Base64 from the high-res canvas
+        const { finalImage } = req.body;
 
         if (!finalImage) {
             return res.status(400).json({ error: 'Final baked image is required' });
         }
 
-        // 1. Verify design exists and belongs to user
         const design = await db.getDesignById(designId, req.userId);
-        if (!design) {
-            return res.status(404).json({ error: 'Design not found' });
-        }
+        if (!design) return res.status(404).json({ error: 'Design not found' });
 
-        // 2. Process the base64 string into a buffer
-        // Note: frontend uses image/jpeg for the baked composite
+        // Correctly strip base64 prefix regardless of type (png/jpeg)
         const base64Data = finalImage.replace(/^data:image\/\w+;base64,/, "");
         const buffer = Buffer.from(base64Data, 'base64');
 
-        // 3. Define a consistent filename to prevent 404s
+        // Consistent production-proof filename
         const fileName = `${designId}-production-proof.jpg`;
 
-        console.log(`🏭 Baking production proof for Design: ${designId}...`);
-
-        // 4. Upload to the 'finals' folder in R2
-        // We use uploadBuffer to keep the high resolution from the canvas
+        console.log(`🏭 Baking production proof for Design: ${designId}`);
         const finalUrl = await imageStorage.uploadBuffer(buffer, fileName, 'finals');
 
-        // 5. Save the final URL and mark as finalized in DB
-        const updated = await db.finalizeDesign(designId, req.userId, finalUrl);
-
-        // 6. Lock the user's session for the day (Optional, based on your business rules)
+        await db.finalizeDesign(designId, req.userId, finalUrl);
         await db.finalizeUserDesign(req.userId);
 
         res.json({

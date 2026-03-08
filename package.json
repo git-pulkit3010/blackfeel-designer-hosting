@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev": "nodemon backend/server.js",
-    "migrate": "node backend/migrations/migrate.js"
+    "migrate": "node backend/migrations/migrate.js",
+    "fix-urls": "node backend/migrations/fix-r2-urls.js"
   },
   "dependencies": {
     "express": "^4.18.2",

@@ -223,6 +223,7 @@ function loadDesignToCanvas(design) {
         url: design.url || design.processed_image_url
     };
 
+    DOM.generatedImage.crossOrigin = "anonymous";
     DOM.generatedImage.src = state.currentDesign.url;
     DOM.designWrapper.classList.remove('hidden');
     
@@ -251,6 +252,7 @@ function renderHistory() {
         div.onclick = () => loadDesignToCanvas(item);
         
         const img = document.createElement('img');
+        img.crossOrigin = "anonymous";
         // FIX: Check both property names
         img.src = item.url || item.processed_image_url; 
         img.className = 'w-full h-full object-cover';
