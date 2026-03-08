@@ -319,10 +319,13 @@ function renderOrders(orders) {
         };
 
         const statusLabel = order.status.replace('_', ' ').toUpperCase();
-        
-        // Use finalized_image_url (full mockup) or processed_image_url (transparent design)
+
+        // Use finalized_image_url (full mockup with t-shirt) first, fallback to processed_image_url
         let displayImageUrl = order.finalized_image_url || order.processed_image_url;
         
+        // Debug logging
+        console.log(`Order ${order.id}: finalized=${order.finalized_image_url ? '✓' : 'null'}, processed=${order.processed_image_url ? '✓' : 'null'}, using=${displayImageUrl ? 'finalized' : 'none'}`);
+
         // Ensure URL is valid and absolute
         if (displayImageUrl && !displayImageUrl.startsWith('http')) {
             // Fallback for relative paths if any

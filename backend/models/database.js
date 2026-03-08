@@ -224,16 +224,16 @@ async createFulfillmentJob(orderId) {
 
     async getOrdersByUserId(userId) {
         const result = await pool.query(
-            `SELECT 
-                o.id, 
-                o.amount_in_paise, 
-                o.status, 
-                o.tshirt_size, 
-                o.tshirt_quantity, 
+            `SELECT
+                o.id,
+                o.amount_in_paise,
+                o.status,
+                o.tshirt_size,
+                o.tshirt_quantity,
                 o.created_at,
-                d.processed_image_url, 
-                d.finalized_image_url, 
-                d.tshirt_color, 
+                d.processed_image_url,
+                d.finalized_image_url,
+                d.tshirt_color,
                 d.prompt
              FROM orders o
              JOIN designs d ON o.design_id = d.id
@@ -241,6 +241,12 @@ async createFulfillmentJob(orderId) {
              ORDER BY o.created_at DESC`,
             [userId]
         );
+        
+        // Debug: Log image URLs for each order
+        result.rows.forEach((order, idx) => {
+            console.log(`Order ${idx + 1} (${order.id}): finalized_image_url=${order.finalized_image_url ? '✓' : 'NULL'}, processed_image_url=${order.processed_image_url ? '✓' : 'NULL'}`);
+        });
+        
         return result.rows;
     }
 };
