@@ -1,26 +1,37 @@
 import RazorpayModule from 'razorpay';
 import crypto from 'crypto';
 
-let razorpay;
+let razorpayInstance = null;
 
-function getRazorpay() {
-    if (!razorpay) {
-        razorpay = new RazorpayModule({
-            key_id: process.env.RAZORPAY_KEY_ID,
-            key_secret: process.env.RAZORPAY_KEY_SECRET
-        });
+// Initialize inside a function to ensure process.env is populated
+const getRazorpay = () => {
+    if (razorpayInstance) return razorpayInstance;
+
+    const key_id = process.env.RAZORPAY_KEY_ID;
+    const key_secret = process.env.RAZORPAY_KEY_SECRET;
+
+    if (!key_id || !key_secret) {
+        throw new Error('RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is missing from .env');
     }
-    return razorpay;
-}
+
+    razorpayInstance = new RazorpayModule({
+        key_id: key_id,
+        key_secret: key_secret
+    });
+
+    return razorpayInstance;
+};
 
 export const razorpayService = {
     async createOrder(amountInPaise, orderId, customerEmail, customerName) {
         try {
-            const order = await getRazorpay().orders.create({
-                amount: amountInPaise, // in paise
+            console.log(`💳 Creating Razorpay order for ₹${amountInPaise / 100}...`);
+            
+            const rzp = getRazorpay();
+            const order = await rzp.orders.create({
+                amount: Math.round(amountInPaise), // Must be integer paise
                 currency: 'INR',
-                receipt: orderId,
-                customer_notify: 1,
+                receipt: orderId.substring(0, 40), // Receipt limit is 40 chars
                 notes: {
                     order_id: orderId,
                     email: customerEmail,
@@ -30,15 +41,18 @@ export const razorpayService = {
 
             return order;
         } catch (error) {
-            console.error('Razorpay order creation error:', error.message);
-            throw new Error('Failed to create Razorpay order: ' + error.message);
+            // Razorpay errors are often objects, not standard Error instances
+            const errorMsg = error.description || error.error?.description || JSON.stringify(error);
+            console.error('Razorpay API Error:', errorMsg);
+            throw new Error(errorMsg);
         }
     },
 
     async verifySignature(orderId, paymentId, signature) {
         try {
+            const key_secret = process.env.RAZORPAY_KEY_SECRET;
             const generatedSignature = crypto
-                .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+                .createHmac('sha256', key_secret)
                 .update(`${orderId}|${paymentId}`)
                 .digest('hex');
 
@@ -46,28 +60,6 @@ export const razorpayService = {
         } catch (error) {
             console.error('Signature verification error:', error.message);
             return false;
-        }
-    },
-
-    async capturePayment(paymentId, amountInPaise) {
-        try {
-            const payment = await getRazorpay().payments.capture(paymentId, amountInPaise);
-            return payment;
-        } catch (error) {
-            console.error('Payment capture error:', error.message);
-            throw new Error('Failed to capture payment: ' + error.message);
-        }
-    },
-
-    async refundPayment(paymentId, amountInPaise = null) {
-        try {
-            const refund = await getRazorpay().payments.refund(paymentId, {
-                amount: amountInPaise
-            });
-            return refund;
-        } catch (error) {
-            console.error('Refund error:', error.message);
-            throw new Error('Failed to refund payment: ' + error.message);
         }
     }
 };

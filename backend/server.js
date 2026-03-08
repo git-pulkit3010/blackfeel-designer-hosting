@@ -1,3 +1,4 @@
+import './config/env.js';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -27,6 +28,7 @@ app.use(helmet({
             "script-src": ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://checkout.razorpay.com", "https://cdn.jsdelivr.net"],
             // Allow Google Fonts
             "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            "frame-src": ["'self'", "https://api.razorpay.com"],
             "font-src": ["'self'", "https://fonts.gstatic.com"],
             // Allow external images (like from OpenRouter or Cloudflare R2)
             "img-src": ["'self'", "data:", "blob:", "https:"],
