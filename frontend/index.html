@@ -6,6 +6,7 @@
     <title>LUXE | AI T-Shirt Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -91,10 +92,14 @@
             <div class="p-4 md:p-6 flex flex-col gap-4 shrink-0">
                 <h2 class="text-xs md:text-sm uppercase tracking-widest text-gray-400 serif">Art Direction</h2>
                 <textarea id="prompt-input" class="w-full bg-[#111] border border-white/10 rounded p-4 text-sm md:text-base text-white placeholder-gray-600 focus:outline-none focus:border-yellow-600 transition-colors resize-none h-20 md:h-28" placeholder="Describe your vision..."></textarea>
-                
+
                 <button id="generate-btn" class="w-full py-3 md:py-4 bg-white text-black text-sm md:text-base font-medium tracking-widest uppercase hover:bg-yellow-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                     <span>Generate Design</span>
                     <div id="btn-loader" class="loader hidden"></div>
+                </button>
+
+                <button id="buy-now-btn" class="w-full py-3 md:py-4 bg-yellow-600 text-black text-sm md:text-base font-medium tracking-widest uppercase hover:bg-yellow-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hidden">
+                    <span>BUY NOW - ₹499</span>
                 </button>
             </div>
 

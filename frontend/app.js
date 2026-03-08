@@ -29,7 +29,7 @@ const DOM = {
     showLoginBtn: document.getElementById('show-login-btn'),
     authError: document.getElementById('auth-error'),
     logoutBtn: document.getElementById('logout-btn'),
-    
+
     // Main UI
     tshirtImg: document.getElementById('tshirt-base-img'),
     colorBtns: document.querySelectorAll('.color-btn'),
@@ -41,7 +41,8 @@ const DOM = {
     generatedImage: document.getElementById('generated-image'),
     historyList: document.getElementById('history-list'),
     emptyHistory: document.getElementById('empty-history'),
-    resizeHandle: document.getElementById('resize-handle')
+    resizeHandle: document.getElementById('resize-handle'),
+    buyNowBtn: document.getElementById('buy-now-btn')
 };
 
 // --- Initialization ---
@@ -94,7 +95,10 @@ function setupEventListeners() {
     
     // Generate button
     DOM.generateBtn.addEventListener('click', generateDesign);
-    
+
+    // Buy Now button
+    DOM.buyNowBtn.addEventListener('click', handleBuyNow);
+
     // Note: Manual drag and resize listeners have been removed from here
     // as Interact.js now handles the heavy lifting!
 }
@@ -227,10 +231,15 @@ function showAuthError(message) {
 function updateUI() {
     if (state.user) {
         DOM.rateLimitDisplay.textContent = state.generationsLeft;
-        
+
         if (state.generationsLeft <= 0) {
             DOM.generateBtn.disabled = true;
             DOM.generateBtn.querySelector('span').textContent = 'Limit Reached';
+        }
+
+        // Show BUY NOW button if there's a current design
+        if (state.currentDesign) {
+            DOM.buyNowBtn.classList.remove('hidden');
         }
     }
 }
@@ -328,6 +337,11 @@ function loadDesignToCanvas(design) {
     DOM.generatedImage.src = design.url;
     DOM.designWrapper.classList.remove('hidden');
     applyTransform(design.x, design.y, design.scale);
+    
+    // Show BUY NOW button
+    if (DOM.buyNowBtn) {
+        DOM.buyNowBtn.classList.remove('hidden');
+    }
 }
 
 function restoreFromHistory(id) {
@@ -369,7 +383,7 @@ async function loadHistory() {
         const response = await fetch(`${API_BASE}/designs/history`, {
             headers: { 'Authorization': `Bearer ${state.token}` }
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             state.history = data.designs || [];
@@ -377,13 +391,183 @@ async function loadHistory() {
                 state.generationsLeft = 5 - data.generationsUsed;
                 DOM.rateLimitDisplay.textContent = state.generationsLeft;
             }
-            
+
             if (state.history.length > 0) {
                 renderHistory();
             }
         }
     } catch (error) {
         console.error('Failed to load history:', error);
+    }
+}
+
+// --- BUY NOW / Checkout Logic ---
+
+async function handleBuyNow() {
+    if (!state.currentDesign) {
+        alert('Please generate or select a design first');
+        return;
+    }
+
+    if (!state.token) {
+        showAuthModal();
+        return;
+    }
+
+    // Show size selection modal
+    showSizeModal();
+}
+
+function showSizeModal() {
+    const modal = document.createElement('div');
+    modal.id = 'size-modal';
+    modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4';
+    modal.innerHTML = `
+        <div class="bg-[#1a1a1a] border border-white/10 rounded-xl w-full max-w-md p-8">
+            <div class="text-center mb-6">
+                <h2 class="text-xl font-semibold text-white">Select Size</h2>
+                <p class="text-gray-500 text-sm mt-2">Choose your T-shirt size</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <button class="size-btn bg-[#111] border border-white/10 rounded-lg p-4 text-white hover:border-yellow-600 transition" data-size="S">S</button>
+                <button class="size-btn bg-[#111] border border-white/10 rounded-lg p-4 text-white hover:border-yellow-600 transition" data-size="M">M</button>
+                <button class="size-btn bg-[#111] border border-white/10 rounded-lg p-4 text-white hover:border-yellow-600 transition" data-size="L">L</button>
+                <button class="size-btn bg-[#111] border border-white/10 rounded-lg p-4 text-white hover:border-yellow-600 transition" data-size="XL">XL</button>
+                <button class="size-btn bg-[#111] border border-white/10 rounded-lg p-4 text-white hover:border-yellow-600 transition" data-size="XXL">XXL</button>
+            </div>
+
+            <div class="flex gap-3">
+                <button id="cancel-size-btn" class="flex-1 bg-[#111] hover:bg-[#222] text-gray-400 py-3 rounded-lg transition">Cancel</button>
+                <button id="proceed-buy-btn" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-black font-semibold py-3 rounded-lg transition">Proceed</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    let selectedSize = null;
+
+    modal.querySelectorAll('.size-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            modal.querySelectorAll('.size-btn').forEach(b => b.classList.remove('border-yellow-600', 'bg-[#222]'));
+            btn.classList.add('border-yellow-600', 'bg-[#222]');
+            selectedSize = btn.dataset.size;
+        });
+    });
+
+    document.getElementById('cancel-size-btn').addEventListener('click', () => {
+        modal.remove();
+    });
+
+    document.getElementById('proceed-buy-btn').addEventListener('click', () => {
+        if (!selectedSize) {
+            alert('Please select a size');
+            return;
+        }
+        modal.remove();
+        initiateCheckout(selectedSize);
+    });
+}
+
+async function initiateCheckout(tshirtSize) {
+    try {
+        // Create order
+        const orderResponse = await fetch(`${API_BASE}/orders/buy-now`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${state.token}`
+            },
+            body: JSON.stringify({
+                designId: state.currentDesign.id,
+                tshirtSize: tshirtSize,
+                quantity: 1
+            })
+        });
+
+        const orderData = await orderResponse.json();
+
+        if (!orderResponse.ok) {
+            throw new Error(orderData.error || 'Failed to create order');
+        }
+
+        // Initiate Razorpay payment
+        const paymentResponse = await fetch(`${API_BASE}/orders/initiate-payment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${state.token}`
+            },
+            body: JSON.stringify({
+                orderId: orderData.orderId
+            })
+        });
+
+        const paymentData = await paymentResponse.json();
+
+        if (!paymentResponse.ok) {
+            throw new Error(paymentData.error || 'Failed to initiate payment');
+        }
+
+        // Open Razorpay checkout
+        const options = {
+            key: paymentData.key,
+            amount: paymentData.amount,
+            currency: paymentData.currency,
+            name: 'LUXE.AI',
+            description: 'T-Shirt Purchase',
+            order_id: paymentData.razorpayOrderId,
+            handler: function(response) {
+                verifyPayment(response, orderData.orderId);
+            },
+            prefill: {
+                name: state.user?.name || '',
+                email: state.user?.email || '',
+                contact: state.user?.phone || ''
+            },
+            theme: {
+                color: '#ca8a04'
+            }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', function(response) {
+            alert('Payment failed: ' + response.error.description);
+        });
+        rzp.open();
+
+    } catch (error) {
+        console.error('Checkout error:', error);
+        alert(error.message || 'Failed to proceed with checkout');
+    }
+}
+
+async function verifyPayment(paymentResponse, orderId) {
+    try {
+        const response = await fetch(`${API_BASE}/payments/verify`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${state.token}`
+            },
+            body: JSON.stringify({
+                razorpayOrderId: paymentResponse.razorpay_order_id,
+                razorpayPaymentId: paymentResponse.razorpay_payment_id,
+                razorpaySignature: paymentResponse.razorpay_signature
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            alert('Payment successful! Your order has been placed.');
+            // Optionally redirect or show success page
+        } else {
+            throw new Error(data.error || 'Payment verification failed');
+        }
+    } catch (error) {
+        console.error('Payment verification error:', error);
+        alert(error.message || 'Payment verification failed');
     }
 }
 
