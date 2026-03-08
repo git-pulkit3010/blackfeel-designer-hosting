@@ -28,6 +28,7 @@ const DOM = {
     showLoginBtn: document.getElementById('show-login-btn'),
     authError: document.getElementById('auth-error'),
     logoutBtn: document.getElementById('logout-btn'),
+    myOrdersBtn: document.getElementById('my-orders-btn'),
     
     // Main UI
     tshirtImg: document.getElementById('tshirt-base-img'),
@@ -78,6 +79,7 @@ function setupEventListeners() {
     });
 
     DOM.logoutBtn.addEventListener('click', handleLogout);
+    DOM.myOrdersBtn.addEventListener('click', handleMyOrders);
 
     // Archives Modal
     DOM.archivesBtn.addEventListener('click', () => {
@@ -239,6 +241,11 @@ function handleLogout() {
     state.currentDesign = null;
     state.history = [];
     window.location.reload();
+}
+
+function handleMyOrders() {
+    // TODO: Implement My Orders functionality
+    alert('My Orders - Coming soon!');
 }
 
 function showAuthError(message) {

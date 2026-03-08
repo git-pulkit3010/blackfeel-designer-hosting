@@ -52,10 +52,13 @@
             <div class="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-tr from-yellow-700 to-yellow-500 rounded-sm"></div>
             <h1 class="text-xl md:text-2xl tracking-widest text-white serif">LUXE<span class="text-yellow-600">.AI</span></h1>
         </div>
-        <div class="flex items-center gap-4">
+        <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
             <div class="text-[10px] md:text-xs text-gray-500 uppercase tracking-widest">
                 Generations: <span id="rate-limit-display" class="text-white font-bold">5</span> Left
             </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="my-orders-btn" class="text-[10px] md:text-xs text-gray-400 hover:text-white transition uppercase tracking-widest">My Orders</button>
             <button id="logout-btn" class="text-[10px] md:text-xs text-gray-400 hover:text-white transition uppercase tracking-widest hidden">Logout</button>
         </div>
     </header>
