@@ -563,56 +563,117 @@ async function loadHistory() {
 // --- BUY NOW / Checkout Logic ---
 
 // Finalize design by "baking" t-shirt + design composite
+// async function handleFinalize() {
+//     if (!state.currentDesign) {
+//         throw new Error('No design to finalize');
+//     }
+
+//     try {
+//         const canvas = document.createElement('canvas');
+//         canvas.width = 1000;
+//         canvas.height = 1200;
+//         const ctx = canvas.getContext('2d');
+
+//         // 1. Load and Draw the T-Shirt Mockup First
+//         const tshirtImg = new Image();
+//         tshirtImg.src = DOM.tshirtImg.src;
+//         await new Promise((resolve) => (tshirtImg.onload = resolve));
+//         ctx.drawImage(tshirtImg, 0, 0, 1000, 1200);
+
+//         // 2. Draw the AI Design on top
+//         const designImg = new Image();
+//         designImg.crossOrigin = 'anonymous';
+//         designImg.src = state.currentDesign.url;
+        
+//         await new Promise((resolve, reject) => {
+//             designImg.onload = resolve;
+//             designImg.onerror = () => {
+//                 console.warn('CORS failed, retrying without crossOrigin constraint...');
+//                 designImg.crossOrigin = null;
+//                 designImg.src = state.currentDesign.url + '?t=' + Date.now();
+//                 designImg.onload = resolve;
+//                 designImg.onerror = reject;
+//             };
+//         });
+
+//         const centerX = 500 + (state.currentDesign.x * 2);
+//         const centerY = 600 + (state.currentDesign.y * 2);
+//         const dWidth = 400 * state.currentDesign.scale * 2;
+//         const dHeight = 400 * state.currentDesign.scale * 2;
+
+//         ctx.drawImage(
+//             designImg,
+//             centerX - dWidth / 2,
+//             centerY - dHeight / 2,
+//             dWidth,
+//             dHeight
+//         );
+
+//         return canvas.toDataURL('image/jpeg', 0.9);
+//     } catch (error) {
+//         console.error('Baking failed:', error);
+//         throw new Error('Failed to process design image. Please try regenerating or contact support if issue persists.');
+//     }
+// }
+
+// app.js
+
 async function handleFinalize() {
-    if (!state.currentDesign) {
-        throw new Error('No design to finalize');
-    }
+    if (!state.currentDesign) return null;
 
     try {
         const canvas = document.createElement('canvas');
-        canvas.width = 1000;
-        canvas.height = 1200;
+        // Production dimensions for the printer
+        const CANVAS_WIDTH = 2000;
+        const CANVAS_HEIGHT = 2400;
+        canvas.width = CANVAS_WIDTH;
+        canvas.height = CANVAS_HEIGHT;
         const ctx = canvas.getContext('2d');
 
-        // 1. Load and Draw the T-Shirt Mockup First
         const tshirtImg = new Image();
         tshirtImg.src = DOM.tshirtImg.src;
-        await new Promise((resolve) => (tshirtImg.onload = resolve));
-        ctx.drawImage(tshirtImg, 0, 0, 1000, 1200);
-
-        // 2. Draw the AI Design on top
-        const designImg = new Image();
-        designImg.crossOrigin = 'anonymous';
-        designImg.src = state.currentDesign.url;
         
-        await new Promise((resolve, reject) => {
-            designImg.onload = resolve;
-            designImg.onerror = () => {
-                console.warn('CORS failed, retrying without crossOrigin constraint...');
-                designImg.crossOrigin = null;
-                designImg.src = state.currentDesign.url + '?t=' + Date.now();
-                designImg.onload = resolve;
-                designImg.onerror = reject;
-            };
-        });
+        const designImg = new Image();
+        designImg.crossOrigin = "anonymous";
+        designImg.src = state.currentDesign.url;
 
-        const centerX = 500 + (state.currentDesign.x * 2);
-        const centerY = 600 + (state.currentDesign.y * 2);
-        const dWidth = 400 * state.currentDesign.scale * 2;
-        const dHeight = 400 * state.currentDesign.scale * 2;
+        await Promise.all([
+            new Promise(res => tshirtImg.onload = res),
+            new Promise(res => designImg.onload = res)
+        ]);
 
+        // 1. Draw the T-shirt to fill the entire production canvas
+        ctx.drawImage(tshirtImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        // 2. Calculate the exact UI scale factor
+        // We determine how much larger the canvas is compared to the UI element
+        const uiWidth = DOM.tshirtImg.clientWidth;
+        const uiHeight = DOM.tshirtImg.clientHeight;
+        const scaleX = CANVAS_WIDTH / uiWidth;
+        const scaleY = CANVAS_HEIGHT / uiHeight;
+
+        // 3. Map the design size and position using these factors
+        // This ensures the design stays perfectly "within the shirt"
+        const finalWidth = (DOM.generatedImage.clientWidth * state.currentDesign.scale) * scaleX;
+        const finalHeight = (DOM.generatedImage.clientHeight * state.currentDesign.scale) * scaleY;
+
+        // Calculate center based on the relative offset from the UI
+        const finalX = (CANVAS_WIDTH / 2) + (state.currentDesign.x * scaleX);
+        const finalY = (CANVAS_HEIGHT / 2) + (state.currentDesign.y * scaleY);
+
+        // 4. Draw the design
         ctx.drawImage(
-            designImg,
-            centerX - dWidth / 2,
-            centerY - dHeight / 2,
-            dWidth,
-            dHeight
+            designImg, 
+            finalX - (finalWidth / 2), 
+            finalY - (finalHeight / 2), 
+            finalWidth, 
+            finalHeight
         );
 
-        return canvas.toDataURL('image/jpeg', 0.9);
+        return canvas.toDataURL('image/jpeg', 0.95);
     } catch (error) {
-        console.error('Baking failed:', error);
-        throw new Error('Failed to process design image. Please try regenerating or contact support if issue persists.');
+        console.error("Baking failed:", error);
+        return null;
     }
 }
 

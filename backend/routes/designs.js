@@ -98,29 +98,44 @@ router.put('/:designId/position', authMiddleware, async (req, res) => {
 
 // backend/routes/designs.js
 
+// backend/routes/designs.js
+
+// Replace your existing /:designId/finalize route with this:
 router.post('/:designId/finalize', authMiddleware, async (req, res) => {
     try {
         const { designId } = req.params;
         const { finalImage } = req.body;
 
         if (!finalImage) {
-            return res.status(400).json({ error: 'Final baked image is required' });
+            return res.status(400).json({ error: 'Final image is required' });
         }
 
         const design = await db.getDesignById(designId, req.userId);
-        if (!design) return res.status(404).json({ error: 'Design not found' });
+        if (!design) {
+            return res.status(404).json({ error: 'Design not found' });
+        }
 
-        // Correctly strip base64 prefix regardless of type (png/jpeg)
+        // ⚠️ CRITICAL: Remove the `if (design.is_finalized)` block here if you still have it.
+        // If you don't remove it, the server will throw a 400 error when you try 
+        // to buy a design from the archive that was previously paid for.
+
+        // Safely strip the data URI prefix
         const base64Data = finalImage.replace(/^data:image\/\w+;base64,/, "");
         const buffer = Buffer.from(base64Data, 'base64');
 
-        // Consistent production-proof filename
-        const fileName = `${designId}-production-proof.jpg`;
+        // ✨ THE FIX: Append a unique timestamp to the filename
+        const timestamp = Date.now();
+        const fileName = `${designId}-${timestamp}-proof.jpg`;
 
-        console.log(`🏭 Baking production proof for Design: ${designId}`);
+        console.log(`🏭 Baking unique production proof: ${fileName}`);
+
+        // Upload to the 'finals' folder in R2
         const finalUrl = await imageStorage.uploadBuffer(buffer, fileName, 'finals');
 
-        await db.finalizeDesign(designId, req.userId, finalUrl);
+        // Update the design record with this latest URL
+        const updated = await db.finalizeDesign(designId, req.userId, finalUrl);
+
+        // (Optional) Lock the user's generation limit if desired
         await db.finalizeUserDesign(req.userId);
 
         res.json({
