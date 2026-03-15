@@ -20,6 +20,15 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
+    'https://designer.blackfeel.co.in',
+    'https://www.designer.blackfeel.co.in'
+];
+
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -29,7 +38,7 @@ app.use(helmet({
             "script-src-attr": ["'unsafe-inline'"], 
             "frame-src": ["'self'", "https://api.razorpay.com"],
             "img-src": ["'self'", "data:", "blob:", "https:"],
-            "connect-src": ["'self'", "https:", "http://localhost:3000"],
+            "connect-src": ["'self'", "https:", "http://localhost:3000", ...allowedOrigins],
             "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             "font-src": ["'self'", "https://fonts.gstatic.com"],
         },
@@ -38,7 +47,15 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false,
 }));
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: function (origin, callback) {
+        // allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            var msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
     credentials: true
 }));
 

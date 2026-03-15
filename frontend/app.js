@@ -1,5 +1,8 @@
 // --- Configuration ---
-const API_BASE = '/api';
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3000'
+    : 'https://blackfeel-designer-hosting.onrender.com'; // Actual Render backend URL
+const API_BASE = `${API_BASE_URL}/api`;
 
 // --- State Management ---
 const state = {
