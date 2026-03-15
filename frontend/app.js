@@ -429,13 +429,19 @@ async function generateDesign() {
         }
 
         const imageUrl = data.imageUrl;
+        if (!imageUrl || imageUrl.includes('undefined')) {
+            throw new Error('Image URL is invalid. Please check your Cloudflare R2 configuration on the backend.');
+        }
 
         // Preload image
         await new Promise((resolve, reject) => {
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.onload = resolve;
-            img.onerror = reject;
+            img.onerror = (e) => {
+                console.error('Image preload failed for URL:', imageUrl, e);
+                reject(new Error('Failed to load the generated image. This is usually a CORS or configuration issue.'));
+            };
             img.src = imageUrl;
         });
 

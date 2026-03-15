@@ -31,10 +31,7 @@ export const imageStorage = {
                 Key: fileName,
                 Body: optimized,
                 ContentType: 'image/webp',
-                CacheControl: 'public, max-age=31536000',
-                Metadata: {
-                    'access-control-allow-origin': '*'
-                }
+                CacheControl: 'public, max-age=31536000'
             }));
 
             const cdnUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${fileName}`;
@@ -63,10 +60,7 @@ export const imageStorage = {
                 Key: fileName,
                 Body: optimized,
                 ContentType: 'image/webp',
-                CacheControl: 'public, max-age=31536000',
-                Metadata: {
-                    'access-control-allow-origin': '*'
-                }
+                CacheControl: 'public, max-age=31536000'
             }));
 
             return `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${fileName}`;
@@ -84,10 +78,7 @@ export const imageStorage = {
                 Key: key,
                 Body: buffer,
                 ContentType: 'image/webp',
-                CacheControl: 'public, max-age=31536000',
-                Metadata: {
-                    'access-control-allow-origin': '*'
-                }
+                CacheControl: 'public, max-age=31536000'
             }));
 
             const cdnUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${key}`;
