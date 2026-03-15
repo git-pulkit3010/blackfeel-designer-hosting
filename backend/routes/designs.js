@@ -24,8 +24,8 @@ router.post('/generate', authMiddleware, async (req, res) => {
         }
 
         console.log('✨ [MOCK] Bypassing generation to save credits...');
-        // Use a reliable public test image
-        const base64DataUrl = "https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/shirt.png"; 
+        // Using a reliable placeholder image
+        const base64DataUrl = "https://placehold.co/600x600/png?text=Design+Mockup"; 
         const transparentBase64 = base64DataUrl; 
 
         /* 
