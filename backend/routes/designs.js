@@ -23,14 +23,19 @@ router.post('/generate', authMiddleware, async (req, res) => {
             return res.status(403).json({ error: 'Daily limit reached' });
         }
 
-        console.log('✨ Generating image with Gemini 2.5 via OpenRouter...');
+        console.log('✨ [MOCK] Bypassing generation to save credits...');
+        // Use a reliable public test image
+        const base64DataUrl = "https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/shirt.png"; 
+        const transparentBase64 = base64DataUrl; 
+
+        /* 
         const base64DataUrl = await openRouterService.generateImage(prompt);
-        
-        // Remove background for the interactive decal
         const transparentBase64 = await removeBgService.process(base64DataUrl);
+        */
 
         console.log('☁️ Optimizing and uploading to Cloudflare R2...');
-        const uploadedUrl = await imageStorage.uploadBase64(transparentBase64, 'designs');
+        // We use uploadFromUrl since our mock is a URL, not base64
+        const uploadedUrl = await imageStorage.uploadFromUrl(transparentBase64, 'designs');
 
         // Store design: both URLs point to transparent version since we always remove bg
         // original_image_url = transparent design (for reference)
