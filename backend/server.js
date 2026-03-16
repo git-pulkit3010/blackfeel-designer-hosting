@@ -29,6 +29,14 @@ const allowedOrigins = [
     'https://www.designer.blackfeel.co.in'
 ];
 
+// Add FRONTEND_URL if provided
+if (process.env.FRONTEND_URL) {
+    const frontendUrl = process.env.FRONTEND_URL.replace(/\/$/, ''); // Remove trailing slash
+    if (!allowedOrigins.includes(frontendUrl)) {
+        allowedOrigins.push(frontendUrl);
+    }
+}
+
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -50,11 +58,25 @@ app.use(cors({
     origin: function (origin, callback) {
         // allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) === -1) {
+        
+        // Check if origin is allowed
+        const isAllowed = allowedOrigins.some(allowed => {
+            if (allowed === '*') return true;
+            try {
+                // Exact match or subdomain match if we wanted, but let's stick to exact match or same domain
+                return origin === allowed;
+            } catch (e) {
+                return false;
+            }
+        });
+
+        if (isAllowed) {
+            return callback(null, true);
+        } else {
+            console.warn(`Blocked origin by CORS: ${origin}`);
             var msg = 'The CORS policy for this site does not allow access from the specified Origin.';
             return callback(new Error(msg), false);
         }
-        return callback(null, true);
     },
     credentials: true
 }));

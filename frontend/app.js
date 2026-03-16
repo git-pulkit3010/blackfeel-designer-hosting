@@ -342,6 +342,7 @@ function renderOrders(orders) {
             <div class="w-full md:w-32 bg-[#0f0f0f] flex items-center justify-center p-2 shrink-0">
                 ${displayImageUrl ? 
                     `<img src="${displayImageUrl}" 
+                          crossorigin="anonymous"
                           class="max-w-full max-h-full object-contain drop-shadow-lg" 
                           alt="Order Design"
                           onerror="this.src='assets/black-tshirt.png'; this.style.opacity='0.5';">` : 
@@ -428,10 +429,13 @@ async function generateDesign() {
             throw new Error(data.error || 'Generation failed');
         }
 
-        const imageUrl = data.imageUrl;
-        if (!imageUrl || imageUrl.includes('undefined')) {
+        const rawImageUrl = data.imageUrl;
+        if (!rawImageUrl || rawImageUrl.includes('undefined')) {
             throw new Error('Image URL is invalid. Please check your Cloudflare R2 configuration on the backend.');
         }
+
+        // Add a cache buster to bypass potentially misconfigured CDN cache for CORS headers
+        const imageUrl = rawImageUrl + (rawImageUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
 
         // Preload image
         await new Promise((resolve, reject) => {
@@ -507,9 +511,14 @@ function loadDesignToCanvas(design) {
 function restoreFromHistory(id) {
     const design = state.history.find(d => d.id === id);
     if (design) {
+        let url = design.url || design.processed_image_url;
+        // Always add or refresh the timestamp to bypass CDN cache for CORS headers
+        const baseUrl = url.split('?')[0];
+        const timestampedUrl = `${baseUrl}?t=${Date.now()}`;
+        
         const normalizedDesign = {
             ...design,
-            url: design.url || design.processed_image_url,
+            url: timestampedUrl,
             // Reset position and scale for a fresh start
             x: 0,
             y: 0,
@@ -542,6 +551,7 @@ function renderHistory() {
         div.onclick = () => restoreFromHistory(item.id);
 
         const img = document.createElement('img');
+        img.crossOrigin = 'anonymous';
         img.src = item.url || item.processed_image_url;
         img.className = 'w-full h-full object-cover';
         img.alt = 'Design Archive';
