@@ -26,7 +26,8 @@ const allowedOrigins = [
     'http://127.0.0.1:3000',
     'http://127.0.0.1:5173',
     'https://designer.blackfeel.co.in',
-    'https://www.designer.blackfeel.co.in'
+    'https://www.designer.blackfeel.co.in',
+    'https://blackfeel-designer-hosting.onrender.com'
 ];
 
 // Add FRONTEND_URL if provided
