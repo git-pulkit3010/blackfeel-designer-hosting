@@ -1,6 +1,20 @@
 // backend/services/openRouter.js
 import axios from 'axios';
 
+function buildDesignOnlyPrompt(prompt) {
+    const cleanedPrompt = prompt.trim();
+
+    return [
+        cleanedPrompt,
+        'Create a print-ready t-shirt graphic design asset only.',
+        'Return only the isolated artwork/decal with no t-shirt, no clothing mockup, no model, no mannequin, no hanger, no folded garment, no fabric texture, no scene, no room, no hands, and no product photo framing.',
+        'Center the composition and keep it tightly cropped around the artwork.',
+        'Use a transparent background. If true transparency is not supported, use a pure white background with only the artwork present so the background can be removed cleanly.',
+        'Do not show the design printed on anything.',
+        'High detail, clean edges, production-friendly, suitable for screen print or DTF.'
+    ].join(' ');
+}
+
 export const openRouterService = {
     async generateImage(prompt) {
         try {
@@ -11,7 +25,7 @@ export const openRouterService = {
                     messages: [
                         {
                             role: 'user',
-                            content: `${prompt}, professional t-shirt design, vector art, clean background, high quality`
+                            content: buildDesignOnlyPrompt(prompt)
                         }
                     ],
                     // FIX: Must include both for Gemini to trigger image generation
