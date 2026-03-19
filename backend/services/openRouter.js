@@ -4,15 +4,30 @@ import axios from 'axios';
 function buildDesignOnlyPrompt(prompt) {
     const cleanedPrompt = prompt.trim();
 
-    return [
-        cleanedPrompt,
-        'Create a print-ready t-shirt graphic design asset only.',
-        'Return only the isolated artwork/decal with no t-shirt, no clothing mockup, no model, no mannequin, no hanger, no folded garment, no fabric texture, no scene, no room, no hands, and no product photo framing.',
-        'Center the composition and keep it tightly cropped around the artwork.',
-        'Use a transparent background. If true transparency is not supported, use a pure white background with only the artwork present so the background can be removed cleanly.',
-        'Do not show the design printed on anything.',
-        'High detail, clean edges, production-friendly, suitable for screen print or DTF.'
-    ].join(' ');
+    return `
+### ROLE
+You are an elite Lead Graphic Designer specializing in high-end streetwear and premium apparel graphics. Your sole purpose is to generate production-ready, isolated design assets for professional printing (Screen Printing, DTF, and DTG).
+
+### USER DESIGN REQUEST
+"${cleanedPrompt}"
+
+### TECHNICAL SPECIFICATIONS (MANDATORY)
+- BACKGROUND: Use a flat, solid #FFFFFF (Pure White) background. No gradients, shadows, or textures.
+- COMPOSITION: Center the artwork perfectly with a 10% safety margin (padding) from all edges.
+- LINE WORK: Ensure all lines are crisp and deliberate. Avoid "whispy" or transparent outer glows.
+- PRINTABILITY: Ensure elements are bold and production-friendly; avoid micro-details smaller than 1px.
+- OUTPUT: Return only the isolated artwork/decal.
+
+### STRICT NEGATIVE CONSTRAINTS
+DO NOT include:
+- T-shirts, clothing mockups, models, mannequins, hangers, or folded garments.
+- Fabric textures, realistic scenes, rooms, or product photo framing.
+- Hands, skin, or any human elements.
+- 3D shadows or "drop shadows" beneath the artwork.
+- Any "AI fluff" such as excessive lighting flares or messy overlapping shapes.
+
+Final Output: High-resolution, clean-edge digital graphic asset only.
+`.trim();
 }
 
 export const openRouterService = {
